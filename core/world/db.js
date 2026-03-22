@@ -47,6 +47,30 @@ function assignPlayersToDefaultCountry(db) {
   }
 }
 
+function ensureDefaultCities(db) {
+  const country = db.prepare("SELECT id, capital_x, capital_y FROM countries ORDER BY id LIMIT 1").get();
+  if (!country) return;
+  const count = db.prepare("SELECT COUNT(*) AS c FROM cities WHERE country_id = ?").get(country.id).c;
+  if (count > 0) return;
+
+  const baseX = country.capital_x ?? 15000;
+  const baseY = country.capital_y ?? 15000;
+  const insert = db.prepare(
+    "INSERT INTO cities (country_id, name, pos_x, pos_y, tier) VALUES (?, ?, ?, ?, ?)"
+  );
+
+  const cities = [
+    ["Астерион", baseX, baseY, 3],
+    ["Бриз", baseX + 1200, baseY - 850, 2],
+    ["Кварц", baseX - 1450, baseY + 920, 2],
+    ["Нова", baseX + 1950, baseY + 1480, 1]
+  ];
+
+  for (const [name, x, y, tier] of cities) {
+    insert.run(country.id, name, x, y, tier);
+  }
+}
+
 function seedFoodMedicineIfNeeded(db) {
   const row = db.prepare("SELECT id FROM items WHERE code = ?").get("food_ration_q1");
   if (row) return;
@@ -116,6 +140,7 @@ function openDatabase(dbPath) {
   seedRecipesIfEmpty(db);
   ensureDefaultCountry(db);
   assignPlayersToDefaultCountry(db);
+  ensureDefaultCities(db);
   seedMarketIndexIfNeeded(db);
 
   return db;

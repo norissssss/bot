@@ -48,6 +48,52 @@ class WorldService {
     return r.id;
   }
 
+  getWorldMeta() {
+    return this.db.prepare("SELECT id, width, height, seed FROM worlds ORDER BY id LIMIT 1").get();
+  }
+
+  listCountriesWithCities() {
+    const world = this.getWorldMeta();
+    if (!world) return [];
+
+    const countries = this.db
+      .prepare(
+        `SELECT id, name, capital_x, capital_y
+         FROM countries
+         WHERE world_id = ?
+         ORDER BY id`
+      )
+      .all(world.id)
+      .map(country => ({ ...country, cities: [] }));
+
+    const cities = this.db
+      .prepare(
+        `SELECT id, country_id, name, pos_x, pos_y, tier
+         FROM cities
+         WHERE country_id IN (SELECT id FROM countries WHERE world_id = ?)
+         ORDER BY tier DESC, name`
+      )
+      .all(world.id);
+
+    const byCountry = new Map(countries.map(country => [country.id, country]));
+    for (const city of cities) {
+      const country = byCountry.get(city.country_id);
+      if (country) {
+        country.cities.push(city);
+      }
+    }
+
+    return countries;
+  }
+
+  getWorldMapData() {
+    const world = this.getWorldMeta();
+    return {
+      ...(world ?? { width: 1, height: 1, seed: 0 }),
+      countries: this.listCountriesWithCities()
+    };
+  }
+
   _defaultCountryId() {
     const row = this.db
       .prepare("SELECT id FROM countries WHERE world_id = ? ORDER BY id LIMIT 1")
