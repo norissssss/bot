@@ -16,8 +16,8 @@ module.exports = {
       return;
     }
 
-    const player = world.getOrCreatePlayerDiscord(interaction.user.id);
     const sub = interaction.options.getSubcommand();
+    const player = world.getOrCreatePlayerDiscord(interaction.user.id);
 
     if (sub === "profile") {
       const v = world.getVitals(player.id);
@@ -81,6 +81,8 @@ module.exports = {
         content: `Использовано: \`${r.used}\`. Здоровье: ${v.health.toFixed(1)}`,
         ephemeral: true
       });
+      return;
     }
+
   }
 };
