@@ -1,0 +1,7 @@
+{
+  "name": "PingPlugin",
+  "version": "1.0.0",
+  "description": "example plugin",
+  "category": "fun",
+  "dependencies": {}
+}
